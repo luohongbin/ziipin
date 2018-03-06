@@ -104,13 +104,7 @@ func (self *FileWriteAgent) Write(data string) {
 	}
 	eLength := len(data)
 	if self.fInfo.fSize >= self.fInfo.fMaxSize {
-		if self.fInfo.currFileIndex+1 >= MaxFileNum {
-			self.fInfo.currFileIndex = 0
-		} else {
-			self.fInfo.currFileIndex += 1
-		}
-
-		self.setFInfo()
+		self.getNextFile()
 	}
 
 	_, err := self.fInfo.f.WriteString(data)
@@ -129,45 +123,64 @@ func (self *FileWriteAgent) reset() {
 	self.setcurrFileIndex()
 	if self.fInfo.f != nil {
 		self.fInfo.f.Close()
+		self.fInfo.f = nil
 	}
 }
 func (self *FileWriteAgent) setcurrFileIndex() {
 	var (
-		minModTime time.Time = time.Now()
+		maxModTime time.Time
 		index      int
 		err        error
 		stat       os.FileInfo
 	)
 	for i := 0; i < MaxFileNum; i++ {
 		fName := filepath.Join(self.dirPath,
-			fmt.Sprintf(FileFormat, self.fInfo.prefix, self.agentName, MaxFileNum-i, self.fInfo.suffix))
+			fmt.Sprintf(FileFormat, self.fInfo.prefix, self.agentName, i+1, self.fInfo.suffix))
 		stat, err = os.Stat(fName)
 		if err == nil {
 			modTime := stat.ModTime()
-			if modTime.Before(minModTime) {
-				minModTime = modTime
+			if modTime.After(maxModTime) {
+				maxModTime = modTime
 				index = i
 			}
-		} else if os.IsNotExist(err) {
-			self.fInfo.currFileIndex = i
-			return
-		} else {
-			panic(err.Error())
 		}
 	}
 	self.fInfo.currFileIndex = index
+}
+func (self *FileWriteAgent) getNextFile() {
+	var err error
+	if self.fInfo.currFileIndex+1 >= MaxFileNum {
+		self.fInfo.currFileIndex = 0
+	} else {
+		self.fInfo.currFileIndex += 1
+	}
+	if self.fInfo.f, err = os.OpenFile(self.getFPath(), os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755); err != nil {
+		fmt.Println(err)
+		return
+	}
+	if err = self.fInfo.f.Truncate(0); err != nil {
+		fmt.Println(err)
+		return
+	}
+	self.fInfo.fSize = 0
 }
 func (self *FileWriteAgent) setFInfo() {
 	var (
 		err error
 	)
-	fPath := filepath.Join(self.dirPath,
-		fmt.Sprintf(FileFormat, self.fInfo.prefix, self.agentName, self.fInfo.currFileIndex+1, self.fInfo.suffix))
-	if self.fInfo.f, err = os.OpenFile(fPath, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755); err != nil {
+	if self.fInfo.f, err = os.OpenFile(self.getFPath(), os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755); err != nil {
 		fmt.Println(err)
+		return
 	}
-	if err = self.fInfo.f.Truncate(0); err != nil {
+	if stat, err := self.fInfo.f.Stat(); err != nil {
 		fmt.Println(err)
+		return
+	} else {
+		self.fInfo.fSize = stat.Size()
 	}
-	self.fInfo.fSize = 0
+}
+func (self *FileWriteAgent) getFPath() string {
+	return filepath.Join(self.dirPath,
+		fmt.Sprintf(FileFormat, self.fInfo.prefix, self.agentName,
+			self.fInfo.currFileIndex+1, self.fInfo.suffix))
 }
