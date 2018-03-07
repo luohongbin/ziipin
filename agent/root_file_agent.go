@@ -10,10 +10,9 @@ import (
 const (
 	MaxFileNum      = 5
 	DefaultMaxFSize = 256 << 20
-	//DefaultMaxFSize = 200
-	DefaultPath   = "/tmp/file_agent"
-	DefaultPrefix = ""
-	DefaultSuffix = ".log"
+	DefaultPath     = "/tmp/file_agent"
+	DefaultPrefix   = ""
+	DefaultSuffix   = ".log"
 )
 
 var (
@@ -60,9 +59,13 @@ func SetMaxSize(size int64) {
 	a.SetMaxSize(size)
 }
 
-func Write(data string) {
+func Write(dataBuf []byte) {
 	a := GetFileAgent()
-	a.Write(data)
+	a.Write(dataBuf)
+}
+func WriteString(data string) {
+	a := GetFileAgent()
+	a.WriteString(data)
 }
 
 func checkAndBuildDir(dir string) error {

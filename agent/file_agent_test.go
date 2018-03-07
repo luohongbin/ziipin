@@ -29,7 +29,7 @@ func base(t *testing.T) *FileWriteAgent {
 func TestSetMaxsize(t *testing.T) {
 	a := base(t)
 	for i := 0; i < 1000; i++ {
-		a.Write(fmt.Sprintf("%s, %d\n", Truth, i))
+		a.WriteString(fmt.Sprintf("%s, %d\n", Truth, i))
 	}
 	err := filepath.Walk(Testdir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -52,7 +52,7 @@ func TestSetPrefix(t *testing.T) {
 	a := base(t)
 	a.SetPrefix(Prefix)
 	for i := 0; i < 1000; i++ {
-		a.Write(fmt.Sprintf("%s, %d\n", Truth, i))
+		a.WriteString(fmt.Sprintf("%s, %d\n", Truth, i))
 	}
 	err := filepath.Walk(Testdir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -75,7 +75,7 @@ func TestSetSuffix(t *testing.T) {
 	a := base(t)
 	a.SetSuffix(Suffix)
 	for i := 0; i < 1000; i++ {
-		a.Write(fmt.Sprintf("%s, %d\n", Truth, i))
+		a.WriteString(fmt.Sprintf("%s, %d\n", Truth, i))
 	}
 	err := filepath.Walk(Testdir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -98,7 +98,7 @@ func TestSetAgentName(t *testing.T) {
 	a := base(t)
 	a.SetAgentName(Name)
 	for i := 0; i < 1000; i++ {
-		a.Write(fmt.Sprintf("%s, %d\n", Truth, i))
+		a.WriteString(fmt.Sprintf("%s, %d\n", Truth, i))
 	}
 	err := filepath.Walk(Testdir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -113,6 +113,12 @@ func TestSetAgentName(t *testing.T) {
 		return nil
 	})
 	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestClean(t *testing.T) {
+	if err := os.RemoveAll(Testdir); err != nil {
 		t.Fatal(err)
 	}
 }

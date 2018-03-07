@@ -95,25 +95,35 @@ func (self *FileWriteAgent) SetMaxSize(size int64) *FileWriteAgent {
 	return self
 }
 
-func (self *FileWriteAgent) Write(data string) {
+func (self *FileWriteAgent) Write(dataBuf []byte) error {
 	self.m.Lock()
 	defer self.m.Unlock()
 
 	if self.fInfo.f == nil {
 		self.setFInfo()
 	}
-	eLength := len(data)
+	eLength := len(dataBuf)
 	if self.fInfo.fSize >= self.fInfo.fMaxSize {
 		self.getNextFile()
 	}
 
-	_, err := self.fInfo.f.WriteString(data)
-	if err != nil {
-		fmt.Println(err)
-		return
+	for {
+		n, err := self.fInfo.f.Write(dataBuf)
+		if err != nil {
+			return err
+		}
+		if n >= len(dataBuf) {
+			break
+		}
+		dataBuf = dataBuf[n:]
 	}
 	self.fInfo.fSize += int64(eLength)
+	return nil
 }
+func (self *FileWriteAgent) WriteString(data string) error {
+	return self.Write([]byte(data))
+}
+
 func (self *FileWriteAgent) Close() {
 	if self.fInfo.f != nil {
 		self.fInfo.f.Close()
