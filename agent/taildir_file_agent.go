@@ -18,7 +18,7 @@ func UseTaildirAgent(path string) *FileWriteAgent {
 	return taildirAgent
 }
 
-func WriteFLumeEvent(appkey, eventId, body string) error {
+func WriteFLumeEvent(appkey, eventId, body string, timestamp int) error {
 	a, err := GetTaildirAgent()
 	if err != nil {
 		return err
@@ -27,35 +27,35 @@ func WriteFLumeEvent(appkey, eventId, body string) error {
 		return fmt.Errorf("eventId is not allowed empty")
 	}
 
-	data := formatEvent(appkey, eventId, body)
+	data := formatEvent(appkey, eventId, body, timestamp)
 	err = a.WriteString(data)
 	return err
 }
 
-func WriteFlumeEvents(appkey string, dataMap map[string][]string) error {
-	if len(dataMap) <= 0 {
-		return nil
-	}
+//func WriteFlumeEvents(appkey string, dataMap map[string][]string) error {
+//	if len(dataMap) <= 0 {
+//		return nil
+//	}
+//
+//	a, err := GetTaildirAgent()
+//	if err != nil {
+//		return err
+//	}
+//
+//	var data string
+//	for eventId, datas := range dataMap {
+//		if eventId == "" {
+//			continue
+//		}
+//		for _, body := range datas {
+//			e := formatEvent(appkey, eventId, body)
+//			data += e
+//		}
+//	}
+//	err = a.WriteString(data)
+//	return err
+//}
 
-	a, err := GetTaildirAgent()
-	if err != nil {
-		return err
-	}
-
-	var data string
-	for eventId, datas := range dataMap {
-		if eventId == "" {
-			continue
-		}
-		for _, body := range datas {
-			e := formatEvent(appkey, eventId, body)
-			data += e
-		}
-	}
-	err = a.WriteString(data)
-	return err
-}
-
-func formatEvent(appkey, eventId, body string) string {
-	return fmt.Sprintf("%s:%s:%s\n", appkey, eventId, body)
+func formatEvent(appkey, eventId, body string, timestamp int) string {
+	return fmt.Sprintf("%s:%s:%d:%s\n", appkey, eventId, timestamp, body)
 }
