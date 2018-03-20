@@ -57,5 +57,5 @@ func WriteFLumeEvent(appkey, eventId, body string, timestamp int) error {
 //}
 
 func formatEvent(appkey, eventId, body string, timestamp int) string {
-	return fmt.Sprintf("%s:%s:%d:%s\n", appkey, eventId, timestamp, body)
+	return fmt.Sprintf("%s:%s:%d:%s\n", appkey, eventId, timestamp*1000, body)
 }
