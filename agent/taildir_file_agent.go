@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -18,19 +19,46 @@ func UseTaildirAgent(path string) *FileWriteAgent {
 	return taildirAgent
 }
 
-func WriteFLumeEvent(appkey, eventId, body string, timestamp int) error {
+type FlumeCommonEvent struct {
+	Type      int    `json:"type"`
+	Appkey    string `json:"appkey"`
+	EventId   string `json:"event_id"`
+	Timestamp int    `json:"timestamp"`
+	Body      string `json:"body"`
+}
+
+func WriteCommonEvent(appkey, eventId, body string, timestamp int) error {
 	a, err := GetTaildirAgent()
 	if err != nil {
 		return err
 	}
-	if eventId == "" {
-		return fmt.Errorf("eventId is not allowed empty")
+	if eventId == "" || appkey == "" {
+		return fmt.Errorf("appkey and eventId are not allowed empty")
 	}
-
-	data := formatEvent(appkey, eventId, body, timestamp)
-	err = a.WriteString(data)
-	return err
+	e := &FlumeCommonEvent{
+		Type:      1,
+		Appkey:    appkey,
+		EventId:   eventId,
+		Timestamp: timestamp,
+		Body:      body,
+	}
+	buf, _ := json.Marshal(e)
+	return a.WriteString(string(buf) + "\n")
 }
+
+// func WriteFLumeEvent(appkey, eventId, body string, timestamp int) error {
+// 	a, err := GetTaildirAgent()
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if eventId == "" {
+// 		return fmt.Errorf("eventId is not allowed empty")
+// 	}
+
+// 	data := formatEvent(appkey, eventId, body, timestamp)
+// 	err = a.WriteString(data)
+// 	return err
+// }
 
 //func WriteFlumeEvents(appkey string, dataMap map[string][]string) error {
 //	if len(dataMap) <= 0 {
@@ -56,6 +84,6 @@ func WriteFLumeEvent(appkey, eventId, body string, timestamp int) error {
 //	return err
 //}
 
-func formatEvent(appkey, eventId, body string, timestamp int) string {
-	return fmt.Sprintf("%s:%s:%d:%s\n", appkey, eventId, timestamp*1000, body)
-}
+// func formatEvent(appkey, eventId, body string, timestamp int) string {
+// 	return fmt.Sprintf("%s:%s:%d:%s\n", appkey, eventId, timestamp, body)
+// }
