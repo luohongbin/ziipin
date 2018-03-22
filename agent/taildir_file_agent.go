@@ -3,6 +3,8 @@ package agent
 import (
 	"encoding/json"
 	"fmt"
+	"math"
+	"time"
 )
 
 var taildirAgent *FileWriteAgent
@@ -27,7 +29,13 @@ type FlumeCommonEvent struct {
 	Body      string `json:"body"`
 }
 
-func WriteCommonEvent(appkey, eventId, body string, timestamp int) error {
+type CommonEventBody struct {
+	SubEvent string `json:"sub_event"`
+	Key      string `json:"key"`
+	ExtraMsg string `json:"extra_msg"`
+}
+
+func WriteCommonEvent(appkey, eventId string, timestamp int, bodyData *CommonEventBody) error {
 	a, err := GetTaildirAgent()
 	if err != nil {
 		return err
@@ -35,12 +43,17 @@ func WriteCommonEvent(appkey, eventId, body string, timestamp int) error {
 	if eventId == "" || appkey == "" {
 		return fmt.Errorf("appkey and eventId are not allowed empty")
 	}
+	now := int(time.Now().Unix())
+	if math.Abs(float64(now-timestamp)) > 86400*7 {
+		return fmt.Errorf("timestamp is ellegal: now=%d, timestamp=%d", now, timestamp)
+	}
+	bodyBuf, _ := json.Marshal(bodyData)
 	e := &FlumeCommonEvent{
 		Type:      1,
 		Appkey:    appkey,
 		EventId:   eventId,
 		Timestamp: timestamp,
-		Body:      body,
+		Body:      string(bodyBuf),
 	}
 	buf, _ := json.Marshal(e)
 	return a.WriteString(string(buf) + "\n")
