@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+const (
+	COMMON_EVENT = 1
+)
+
 var taildirAgent *FileWriteAgent
 
 func GetTaildirAgent() (*FileWriteAgent, error) {
@@ -30,12 +34,15 @@ type FlumeCommonEvent struct {
 }
 
 type CommonEventBody struct {
-	SubEvent string                 `json:"sub_event"`
-	Key      string                 `json:"key"`
-	ExtraMsg map[string]interface{} `json:"extra_msg"`
+	SubEvent string `json:"sub_event"`
+	Key      string `json:"key"`
+	//ExtraMsg map[string]interface{} `json:"extra_msg"`
 }
 
-func WriteCommonEvent(appkey, eventId string, timestamp int, bodyData *CommonEventBody) error {
+func WriteCommonEvent(appkey, eventId string, timestamp int, bodyData []*CommonEventBody) error {
+	if len(bodyData) <= 0 {
+		return nil
+	}
 	a, err := GetTaildirAgent()
 	if err != nil {
 		return err
@@ -49,7 +56,7 @@ func WriteCommonEvent(appkey, eventId string, timestamp int, bodyData *CommonEve
 	}
 	bodyBuf, _ := json.Marshal(bodyData)
 	e := &FlumeCommonEvent{
-		Type:      1,
+		Type:      COMMON_EVENT,
 		Appkey:    appkey,
 		EventId:   eventId,
 		Timestamp: timestamp,
@@ -58,45 +65,3 @@ func WriteCommonEvent(appkey, eventId string, timestamp int, bodyData *CommonEve
 	buf, _ := json.Marshal(e)
 	return a.WriteString(string(buf) + "\n")
 }
-
-// func WriteFLumeEvent(appkey, eventId, body string, timestamp int) error {
-// 	a, err := GetTaildirAgent()
-// 	if err != nil {
-// 		return err
-// 	}
-// 	if eventId == "" {
-// 		return fmt.Errorf("eventId is not allowed empty")
-// 	}
-
-// 	data := formatEvent(appkey, eventId, body, timestamp)
-// 	err = a.WriteString(data)
-// 	return err
-// }
-
-//func WriteFlumeEvents(appkey string, dataMap map[string][]string) error {
-//	if len(dataMap) <= 0 {
-//		return nil
-//	}
-//
-//	a, err := GetTaildirAgent()
-//	if err != nil {
-//		return err
-//	}
-//
-//	var data string
-//	for eventId, datas := range dataMap {
-//		if eventId == "" {
-//			continue
-//		}
-//		for _, body := range datas {
-//			e := formatEvent(appkey, eventId, body)
-//			data += e
-//		}
-//	}
-//	err = a.WriteString(data)
-//	return err
-//}
-
-// func formatEvent(appkey, eventId, body string, timestamp int) string {
-// 	return fmt.Sprintf("%s:%s:%d:%s\n", appkey, eventId, timestamp, body)
-// }
