@@ -30,9 +30,9 @@ type FlumeCommonEvent struct {
 }
 
 type CommonEventBody struct {
-	SubEvent string `json:"sub_event"`
-	Key      string `json:"key"`
-	ExtraMsg string `json:"extra_msg"`
+	SubEvent string                 `json:"sub_event"`
+	Key      string                 `json:"key"`
+	ExtraMsg map[string]interface{} `json:"extra_msg"`
 }
 
 func WriteCommonEvent(appkey, eventId string, timestamp int, bodyData *CommonEventBody) error {
