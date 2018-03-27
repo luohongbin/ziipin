@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	COMMON_EVENT = 1
+	COMMON_EVENT   = 1
+	CUSTOMED_EVENT = 2
 )
 
 var taildirAgent *FileWriteAgent
@@ -39,6 +40,12 @@ type CommonEventBody struct {
 	//ExtraMsg map[string]interface{} `json:"extra_msg"`
 }
 
+type FlumeCustomedEvent struct {
+	Type int    `json:"type"`
+	Path string `json:"path"`
+	Body string `json:"body"`
+}
+
 func WriteCommonEvent(appkey, eventId string, timestamp int, bodyData []*CommonEventBody) error {
 	if len(bodyData) <= 0 {
 		return nil
@@ -61,6 +68,20 @@ func WriteCommonEvent(appkey, eventId string, timestamp int, bodyData []*CommonE
 		EventId:   eventId,
 		Timestamp: timestamp,
 		Body:      string(bodyBuf),
+	}
+	buf, _ := json.Marshal(e)
+	return a.WriteString(string(buf) + "\n")
+}
+
+func WriteCustomedEvent(path string, customEvent string) error {
+	a, err := GetTaildirAgent()
+	if err != nil {
+		return err
+	}
+	e := &FlumeCustomedEvent{
+		Type: CUSTOMED_EVENT,
+		Path: path,
+		Body: customEvent,
 	}
 	buf, _ := json.Marshal(e)
 	return a.WriteString(string(buf) + "\n")
