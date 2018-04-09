@@ -63,9 +63,10 @@ connect:
 	}
 }
 
-func (self *ProducerPool) Send(topic string, buf []byte) {
+func (self *ProducerPool) Publish(topic string, buf []byte) error {
 	self.recvChan <- &ProducerCommonEvent{
 		Topic: topic,
 		Buf:   buf,
 	}
+	return nil
 }
