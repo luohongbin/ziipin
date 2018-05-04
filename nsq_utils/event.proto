@@ -18,3 +18,12 @@ message CommonEvent {
 	int32 timestamp = 3;
 	map<string,string> data_map = 4;
 }
+
+message JuniorEvent {
+	string distinct_id 				= 1;
+	string project					= 2;
+	string type						= 3;
+	int64 timestamp 				= 4;
+	string event_name 				= 5;
+	map<string, string> properties 	= 6;
+}
