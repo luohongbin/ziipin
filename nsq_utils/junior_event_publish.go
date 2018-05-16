@@ -41,20 +41,13 @@ func JuniorEventPublishCount(client Publisher, project, distinctId,
 }
 
 func BuildJuniorEventCount(project, distinctId, eventName string, timestamp int64,
-	dataMap map[string]string, extra ...map[string]string) (*JuniorEvent, error) {
+	properties map[string]string) (*JuniorEvent, error) {
 
 	if err := check(project, distinctId, eventName, timestamp); err != nil {
 		return nil, err
 	}
-	if len(dataMap) == 0 {
-		return nil, fmt.Errorf("dataMap is not allowed empty")
-	}
-	dataBuf, _ := json.Marshal(dataMap)
-	properties := map[string]string{"dataMap": string(dataBuf)}
-	for _, m := range extra {
-		for k, v := range m {
-			properties[k] = v
-		}
+	if len(properties) == 0 {
+		return nil, fmt.Errorf("properties is not allowed empty")
 	}
 
 	e := &JuniorEvent{
