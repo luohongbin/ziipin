@@ -1,7 +1,6 @@
 package nsq_utils
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 )
@@ -27,9 +26,9 @@ func check(project, distinctId, eventName string, timestamp int64) error {
 }
 
 func JuniorEventPublishCount(client Publisher, project, distinctId,
-	eventName string, timestamp int64, dataMap map[string]string) error {
+	eventName string, timestamp int64, properties map[string]string) error {
 
-	e, err := BuildJuniorEventCount(project, distinctId, eventName, timestamp, dataMap)
+	e, err := BuildJuniorEventCount(project, distinctId, eventName, timestamp, properties)
 	if err != nil {
 		return err
 	}
@@ -62,25 +61,13 @@ func BuildJuniorEventCount(project, distinctId, eventName string, timestamp int6
 }
 
 func JuniorEventPublishCalc(client Publisher, project, distinctId,
-	eventName string, timestamp int64, dataMap map[string]string, du int) error {
-	if err := check(project, distinctId, eventName, timestamp); err != nil {
+	eventName string, timestamp int64, properties map[string]string, du int) error {
+
+	e, err := BuildJuniorEventCount(project, distinctId, eventName, timestamp, properties)
+	if err != nil {
 		return err
 	}
-	if len(dataMap) == 0 {
-		return fmt.Errorf("dataMap is not allowed to be empty")
-	}
-	dataBuf, _ := json.Marshal(dataMap)
-	e := &JuniorEvent{
-		DistinctId: distinctId,
-		Project:    project,
-		Type:       "calc",
-		Timestamp:  timestamp,
-		EventName:  eventName,
-		Properties: map[string]string{
-			"dataMap": string(dataBuf),
-			"du":      strconv.Itoa(du),
-		},
-	}
+	e.Properties["du"] = strconv.Itoa(du)
 	buf, err := e.Marshal()
 	if err != nil {
 		return err
