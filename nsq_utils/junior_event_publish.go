@@ -28,7 +28,7 @@ func check(project, distinctId, eventName string, timestamp int64) error {
 func JuniorEventPublishCount(client Publisher, project, distinctId,
 	eventName string, timestamp int64, properties map[string]string) error {
 
-	e, err := BuildJuniorEventCount(project, distinctId, eventName, timestamp, properties)
+	e, err := BuildJuniorEvent(project, distinctId, eventName, "count", timestamp, properties)
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func JuniorEventPublishCount(client Publisher, project, distinctId,
 	return client.Publish(JUNIOR_EVENT_TOPIC, buf)
 }
 
-func BuildJuniorEventCount(project, distinctId, eventName string, timestamp int64,
+func BuildJuniorEvent(project, distinctId, eventName, t string, timestamp int64,
 	properties map[string]string) (*JuniorEvent, error) {
 
 	if err := check(project, distinctId, eventName, timestamp); err != nil {
@@ -52,7 +52,7 @@ func BuildJuniorEventCount(project, distinctId, eventName string, timestamp int6
 	e := &JuniorEvent{
 		DistinctId: distinctId,
 		Project:    project,
-		Type:       "count",
+		Type:       t,
 		Timestamp:  timestamp,
 		EventName:  eventName,
 		Properties: properties,
@@ -63,7 +63,7 @@ func BuildJuniorEventCount(project, distinctId, eventName string, timestamp int6
 func JuniorEventPublishCalc(client Publisher, project, distinctId,
 	eventName string, timestamp int64, properties map[string]string, du int) error {
 
-	e, err := BuildJuniorEventCount(project, distinctId, eventName, timestamp, properties)
+	e, err := BuildJuniorEvent(project, distinctId, eventName, "calc", timestamp, properties)
 	if err != nil {
 		return err
 	}
