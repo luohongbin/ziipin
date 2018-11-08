@@ -3,20 +3,30 @@ package nsq_utils
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/bitly/go-nsq"
+	"sync/atomic"
+	"time"
 	//"strconv"
 )
 
+type Publisher interface {
+	Publish(topic string, buf []byte) error
+}
+
 const (
-	MIDDLE_EVENT_TOPIC = "big_data_middle_event"
+	MIDDLE_EVENT_TOPIC       = "middle_event"
+	MIDDLE_EVENT_COUNT_TOPIC = "middle_event_count"
 )
 
+var count int64
+
 type MiddleEvent struct {
-	DistinctId string
-	Project    string
-	Type       string
-	Timestamp  int64
-	EventName  string
-	Properties map[string]string
+	DistinctId string            `json:"distinct_id"`
+	Project    string            `json:"project"`
+	Type       string            `json:"type"`
+	Timestamp  int64             `json:"timestamp"`
+	EventName  string            `json:"event_name"`
+	Properties map[string]string `json:"properties"`
 }
 
 func middleEventCheck(project, distinctId, eventName string, timestamp int64) error {
@@ -35,6 +45,11 @@ func middleEventCheck(project, distinctId, eventName string, timestamp int64) er
 	return nil
 }
 
+func buildLocalSeq() string {
+	atomic.AddInt64(&count, 1)
+	return fmt.Sprintf("%d_%d", time.Now().Unix(), count)
+}
+
 func buildMiddleEvent(project, distinctId, eventName string, timestamp int64,
 	properties map[string]string) (*MiddleEvent, error) {
 
@@ -43,6 +58,9 @@ func buildMiddleEvent(project, distinctId, eventName string, timestamp int64,
 	}
 	if len(properties) == 0 {
 		return nil, fmt.Errorf("properties is not allowed empty")
+	}
+	if _, found := properties["seq"]; !found {
+		properties["seq"] = buildLocalSeq()
 	}
 
 	e := &MiddleEvent{
@@ -55,16 +73,16 @@ func buildMiddleEvent(project, distinctId, eventName string, timestamp int64,
 	return e, nil
 }
 
-func middleEventPublish(client Publisher, event *MiddleEvent) error {
+func middleEventPublish(client *nsq.Producer, topic string, event *MiddleEvent) error {
 	buf, err := json.Marshal(event)
 	if err != nil {
 		return err
 	}
-	return client.Publish(MIDDLE_EVENT_TOPIC, buf)
+	return client.Publish(topic, buf)
 }
 
 func MiddleEventCountPublish(
-	client Publisher, project, distinctId, eventName string,
+	client *nsq.Producer, project, distinctId, eventName string,
 	timestamp int64, properties map[string]string) error {
 
 	e, err := buildMiddleEvent(project, distinctId, eventName, timestamp, properties)
@@ -72,10 +90,10 @@ func MiddleEventCountPublish(
 		return err
 	}
 	e.Type = "count"
-	return middleEventPublish(client, e)
+	return middleEventPublish(client, MIDDLE_EVENT_COUNT_TOPIC, e)
 }
 
-func MiddleEventServerPublish(client Publisher, project, distinctId,
+func MiddleEventServerPublish(client *nsq.Producer, project, distinctId,
 	eventName string, timestamp int64, properties map[string]string) error {
 
 	e, err := buildMiddleEvent(project, distinctId, eventName, timestamp, properties)
@@ -83,10 +101,10 @@ func MiddleEventServerPublish(client Publisher, project, distinctId,
 		return err
 	}
 	e.Type = "server"
-	return middleEventPublish(client, e)
+	return middleEventPublish(client, MIDDLE_EVENT_TOPIC, e)
 }
 
-func MiddleEventTrackPublish(client Publisher, project, distinctId,
+func MiddleEventTrackPublish(client *nsq.Producer, project, distinctId,
 	eventName string, timestamp int64, properties map[string]string) error {
 
 	e, err := buildMiddleEvent(project, distinctId, eventName, timestamp, properties)
@@ -94,6 +112,5 @@ func MiddleEventTrackPublish(client Publisher, project, distinctId,
 		return err
 	}
 	e.Type = "track"
-	return middleEventPublish(client, e)
+	return middleEventPublish(client, MIDDLE_EVENT_TOPIC, e)
 }
-
