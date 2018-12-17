@@ -14,8 +14,7 @@ type Publisher interface {
 }
 
 const (
-	MIDDLE_EVENT_TOPIC       = "middle_event"
-	MIDDLE_EVENT_COUNT_TOPIC = "middle_event_count"
+	MIDDLE_EVENT_TOPIC = "middle_event"
 )
 
 var count int64
@@ -90,7 +89,7 @@ func MiddleEventCountPublish(
 		return err
 	}
 	e.Type = "count"
-	return middleEventPublish(client, MIDDLE_EVENT_COUNT_TOPIC, e)
+	return middleEventPublish(client, MIDDLE_EVENT_TOPIC, e)
 }
 
 func MiddleEventServerPublish(client *nsq.Producer, project, distinctId,
